@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>今晚吃什么</title>
+    <style>
+        body {
+            font-family: 'Microsoft YaHei', sans-serif;
+            background-color: #f5f5f5;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .container {
+            background-color: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            width: 90%;
+            max-width: 500px;
+        }
+        
+        h1 {
+            color: #ff6b6b;
+            margin-bottom: 30px;
+        }
+        
+        .result {
+            font-size: 28px;
+            font-weight: bold;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 20px 0;
+            color: #ff6b6b;
+            background-color: #fff5f5;
+            border-radius: 10px;
+            padding: 10px;
+            transition: all 0.3s;
+        }
+        
+        button {
+            background-color: #ff6b6b;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            font-size: 18px;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin: 10px 0;
+            box-shadow: 0 4px 8px rgba(255, 107, 107, 0.3);
+        }
+        
+        button:hover {
+            background-color: #ff5252;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(255, 107, 107, 0.4);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        .food-list {
+            margin-top: 30px;
+            text-align: left;
+        }
+        
+        .food-input {
+            display: flex;
+            margin-bottom: 15px;
+        }
+        
+        .food-input input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px 0 0 5px;
+            font-size: 16px;
+        }
+        
+        .food-input button {
+            border-radius: 0 5px 5px 0;
+            padding: 10px 15px;
+            margin: 0;
+            box-shadow: none;
+        }
+        
+        .food-items {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #eee;
+            border-radius: 5px;
+            padding: 10px;
+        }
+        
+        .food-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 10px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .food-item:last-child {
+            border-bottom: none;
+        }
+        
+        .food-item button {
+            background-color: #ff8787;
+            padding: 2px 8px;
+            font-size: 12px;
+            margin: 0;
+        }
+        
+        .animation {
+            animation: shake 0.5s infinite;
+        }
+        
+        @keyframes shake {
+            0% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            50% { transform: translateX(5px); }
+            75% { transform: translateX(-5px); }
+            100% { transform: translateX(0); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>今晚吃什么？</h1>
+        <div class="result" id="result">点击下方按钮开始抽选</div>
+        <button id="drawButton">开始抽选</button>
+        
+        <div class="food-list">
+            <h3>我的食物列表</h3>
+            <div class="food-input">
+                <input type="text" id="newFood" placeholder="添加新的食物选项">
+                <button id="addButton">添加</button>
+            </div>
+            <div class="food-items" id="foodItems">
+                <!-- 食物选项将在这里显示 -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 默认食物列表
+        let foods = [
+            "红烧肉", "宫保鸡丁", "鱼香肉丝", "水煮鱼", "麻婆豆腐",
+            "糖醋排骨", "回锅肉", "酸菜鱼", "番茄炒蛋", "青椒肉丝",
+            "火锅", "烤肉", "寿司", "披萨", "汉堡",
+            "拉面", "炒饭", "饺子", "馄饨", "三明治"
+        ];
+        
+        // 获取DOM元素
+        const resultEl = document.getElementById('result');
+        const drawButton = document.getElementById('drawButton');
+        const newFoodInput = document.getElementById('newFood');
+        const addButton = document.getElementById('addButton');
+        const foodItemsEl = document.getElementById('foodItems');
+        
+        // 从本地存储加载食物列表
+        function loadFoods() {
+            const savedFoods = localStorage.getItem('foods');
+            if (savedFoods) {
+                foods = JSON.parse(savedFoods);
+            }
+            renderFoodList();
+        }
+        
+        // 保存食物列表到本地存储
+        function saveFoods() {
+            localStorage.setItem('foods', JSON.stringify(foods));
+        }
+        
+        // 渲染食物列表
+        function renderFoodList() {
+            foodItemsEl.innerHTML = '';
+            foods.forEach((food, index) => {
+                const foodItem = document.createElement('div');
+                foodItem.className = 'food-item';
+                foodItem.innerHTML = `
+                    <span>${food}</span>
+                    <button data-index="${index}">删除</button>
+                `;
+                foodItemsEl.appendChild(foodItem);
+            });
+            
+            // 为删除按钮添加事件监听
+            document.querySelectorAll('.food-item button').forEach(button => {
+                button.addEventListener('click', function() {
+                    const index = parseInt(this.getAttribute('data-index'));
+                    foods.splice(index, 1);
+                    saveFoods();
+                    renderFoodList();
+                });
+            });
+        }
+        
+        // 抽选食物
+        function drawFood() {
+            if (foods.length === 0) {
+                resultEl.textContent = "请先添加食物选项";
+                return;
+            }
+            
+            resultEl.classList.add('animation');
+            drawButton.disabled = true;
+            
+            let count = 0;
+            const maxCount = 20;
+            const interval = setInterval(() => {
+                const randomIndex = Math.floor(Math.random() * foods.length);
+                resultEl.textContent = foods[randomIndex];
+                
+                count++;
+                if (count >= maxCount) {
+                    clearInterval(interval);
+                    resultEl.classList.remove('animation');
+                    drawButton.disabled = false;
+                    
+                    // 保存最后一次的结果
+                    const finalIndex = Math.floor(Math.random() * foods.length);
+                    resultEl.textContent = foods[finalIndex];
+                }
+            }, 100);
+        }
+        
+        // 添加新食物
+        function addNewFood() {
+            const newFood = newFoodInput.value.trim();
+            if (newFood && !foods.includes(newFood)) {
+                foods.push(newFood);
+                saveFoods();
+                renderFoodList();
+                newFoodInput.value = '';
+            }
+        }
+        
+        // 事件监听
+        drawButton.addEventListener('click', drawFood);
+        addButton.addEventListener('click', addNewFood);
+        newFoodInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                addNewFood();
+            }
+        });
+        
+        // 初始化
+        loadFoods();
+    </script>
+</body>
+</html>
